@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: C/C++ CMake Build and Test
 
 on:
   push:
@@ -8,16 +8,37 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Configure CMake
+      run: cmake -B build -S .
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run tests (if available)
+      run: |
+        cd build
+        ctest -V # or ./<executable_name> if you have a custom test runner
+
+    - name: Check test results
+      run: |
+        cd build
+        if ctest --output-on-failure; then
+          echo "Tests passed!"
+        else
+          echo "Tests failed!"
+          exit 1
+        fi
