@@ -11,13 +11,14 @@ the main functions were implemented starting from the pseudocode in the book:
 
 class tree {
 public:
+    // constructor that initializes the tree with a nil node
     tree() : nil(new node(-1, node::BLACK)), root(nil) {}
     tree(const std::string& filename); // constructor that reads the tree from a file
 
     void insertNode(int key);
     void deleteNode(int key);
     void inOrderTraversal(node* n);
-    bool isKeyInside(int key);
+    int isKeyInside(int key);
     node *search(int key);
 
     node* getRoot() const { return root; }

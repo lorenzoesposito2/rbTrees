@@ -12,6 +12,10 @@ To compile the code, create a build directory, inside it run
 ```
 cmake --build .
 ```
+or
+```
+make
+```
 
  The rbTree executable will be created. After that to run the program run
 
@@ -19,7 +23,7 @@ cmake --build .
 ./rbTree
 ```
 
-The program contains all the basic instructions needed to experiment with all the various operations. If you prefer you can build the tree from a list of values contained in a txt file, I have left some example ones in a folder
+The program contains all the basic instructions needed to experiment with all the various operations. If you prefer you can build the tree from a list of values contained in a .txt file, I have left some example ones in a folder.
 
 ## License and Credits
 

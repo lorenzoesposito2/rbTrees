@@ -17,7 +17,6 @@ public:
     node* getParent() const { return parent; }
     void setParent(node* p) { parent = p; }
 
-    //useful functions for tests
     bool isLeftChild() const { return parent->getLeft() == this; }
     bool isRightChild() const { return parent->getRight() == this; }
     bool isParent(node *n) const { return parent == n; }

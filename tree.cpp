@@ -1,8 +1,8 @@
 #include "tree.h"
 #include <iostream>
 #include <iomanip>
-#include <queue>
 #include <cmath>
+#include <queue>
 
 // constructor that reads keys from a file
 tree::tree(const std::string& filename) : nil(new node(-1, node::BLACK)), root(nil) {
@@ -55,50 +55,6 @@ void tree::rightRotate(node* x) {
     x->setParent(y);
 }
 
-// Fix the red-black tree properties after inserting a node
-void tree::insertFixup(node* z) {
-    while (z->getParent()->getColor() == node::RED) {
-        if (z->getParent() == z->getParent()->getParent()->getLeft()) {
-            node* y = z->getParent()->getParent()->getRight();
-            // case 1
-            if (y->getColor() == node::RED) {
-                z->getParent()->setColor(node::BLACK);
-                y->setColor(node::BLACK);
-                z->getParent()->getParent()->setColor(node::RED);
-                z = z->getParent()->getParent();
-            } else {
-                // case 2
-                if (z == z->getParent()->getRight()) {
-                    z = z->getParent();
-                    leftRotate(z);
-                }
-                // case 3
-                z->getParent()->setColor(node::BLACK);
-                z->getParent()->getParent()->setColor(node::RED);
-                rightRotate(z->getParent()->getParent());
-            }
-        // simmetrical case but with left and right swapped
-        } else {
-            node* y = z->getParent()->getParent()->getLeft();
-            if (y->getColor() == node::RED) {
-                z->getParent()->setColor(node::BLACK);
-                y->setColor(node::BLACK);
-                z->getParent()->getParent()->setColor(node::RED);
-                z = z->getParent()->getParent();
-            } else {
-                if (z == z->getParent()->getLeft()) {
-                    z = z->getParent();
-                    rightRotate(z);
-                }
-                z->getParent()->setColor(node::BLACK);
-                z->getParent()->getParent()->setColor(node::RED);
-                leftRotate(z->getParent()->getParent());
-            }
-        }
-    }
-    root->setColor(node::BLACK);
-}
-
 // Insert a node with the given key into the tree
 void tree::insertNode(int key) {
     node* z = new node(key, node::RED);
@@ -128,9 +84,60 @@ void tree::insertNode(int key) {
     insertFixup(z); // fix the red-black tree properties
 }
 
+// Fix the red-black tree properties after inserting a node
+void tree::insertFixup(node* z) {
+    while (z->getParent()->getColor() == node::RED) {
+        // z parent is a left child
+        if (z->getParent() == z->getParent()->getParent()->getLeft()) {
+            node* y = z->getParent()->getParent()->getRight();
+            // case 1
+            if (y->getColor() == node::RED) {
+                z->getParent()->setColor(node::BLACK);
+                y->setColor(node::BLACK);
+                z->getParent()->getParent()->setColor(node::RED);
+                z = z->getParent()->getParent();
+            } else {
+                // case 2
+                if (z == z->getParent()->getRight()) {
+                    z = z->getParent();
+                    leftRotate(z);
+                }
+                // case 3
+                z->getParent()->setColor(node::BLACK);
+                z->getParent()->getParent()->setColor(node::RED);
+                rightRotate(z->getParent()->getParent());
+            }
+        // simmetrical case but with left and right swapped (z parent is a right child)
+        } else {
+            node* y = z->getParent()->getParent()->getLeft();
+            // case 1
+            if (y->getColor() == node::RED) {
+                z->getParent()->setColor(node::BLACK);
+                y->setColor(node::BLACK);
+                z->getParent()->getParent()->setColor(node::RED);
+                z = z->getParent()->getParent();
+            } else {
+                // case 2
+                if (z == z->getParent()->getLeft()) {
+                    z = z->getParent();
+                    rightRotate(z);
+                }
+                // case 3
+                z->getParent()->setColor(node::BLACK);
+                z->getParent()->getParent()->setColor(node::RED);
+                leftRotate(z->getParent()->getParent());
+            }
+        }
+    }
+    root->setColor(node::BLACK);
+}
+
+
+
 
 // Replace the subtree rooted at node u with the subtree rooted at node v
 void tree::transplant(node* u, node* v) {
+    // if u is the root
     if (u->getParent() == nil) {
         root = v;
     } else if (u == u->getParent()->getLeft()) {
@@ -141,8 +148,8 @@ void tree::transplant(node* u, node* v) {
     v->setParent(u->getParent());
 }
 
-// Returns the node with the minimum key in the subtree rooted at x
-// iterative version
+/* Returns the node with the minimum key in the subtree rooted at x
+it's important to call on the right child of the node which will be deleted */
 node* tree::treeMinimum(node* x) {
     while (x->getLeft() != nil) {
         x = x->getLeft();
@@ -150,9 +157,66 @@ node* tree::treeMinimum(node* x) {
     return x;
 }
 
+// Delete the node with the given key from the tree
+void tree::deleteNode(int key) {
+    // search for the node with the given key
+    node* z = root;
+    while (z != nil && z->getKey() != key) {
+        if (key < z->getKey()) {
+            z = z->getLeft();
+        } else {
+            z = z->getRight();
+        }
+    }
+
+    // node not found
+    if (z == nil) {
+        std::cout << "Node not found in the tree.\n";
+        return;
+    }
+
+    // deletion routine
+    node* y = z;
+    node::color yOriginalColor = y->getColor();
+    node* x;
+
+    // if z has only one child
+    if (z->getLeft() == nil) {
+        x = z->getRight();
+        transplant(z, z->getRight());
+    } else if (z->getRight() == nil) {
+        x = z->getLeft();
+        transplant(z, z->getLeft());
+    } else {
+        // if z has two children
+        y = treeMinimum(z->getRight());
+        yOriginalColor = y->getColor();
+        x = y->getRight();
+        if (y->getParent() != z) {
+            transplant(y, y->getRight());
+            y->setRight(z->getRight());
+            y->getRight()->setParent(y);
+        } else {
+            x->setParent(y);
+        }
+        transplant(z, y);
+        y->setLeft(z->getLeft());
+        y->getLeft()->setParent(y);
+        y->setColor(z->getColor());
+    }
+    // if the node deleted was black, fix the red-black tree properties
+    if (yOriginalColor == node::BLACK) {
+        deleteFixup(x);
+    }
+
+    // delete the node effectively
+    delete z;
+}
+
 // Fix the red-black tree properties after deleting a node
 void tree::deleteFixup(node* x) {
     while (x != root && x->getColor() == node::BLACK) {
+        // x is a left child
         if (x == x->getParent()->getLeft()) {
             node* w = x->getParent()->getRight();
             // case 1
@@ -183,23 +247,28 @@ void tree::deleteFixup(node* x) {
             }
         // simmetrical case but with left and right swapped
         } else {
+            // x is a right child
             node* w = x->getParent()->getLeft();
+            // case 1
             if (w->getColor() == node::RED) {
                 w->setColor(node::BLACK);
                 x->getParent()->setColor(node::RED);
                 rightRotate(x->getParent());
                 w = x->getParent()->getLeft();
             }
+            // case 2
             if (w->getRight()->getColor() == node::BLACK && w->getLeft()->getColor() == node::BLACK) {
                 w->setColor(node::RED);
                 x = x->getParent();
             } else {
+                // case 3
                 if (w->getLeft()->getColor() == node::BLACK) {
                     w->getRight()->setColor(node::BLACK);
                     w->setColor(node::RED);
                     leftRotate(w);
                     w = x->getParent()->getLeft();
                 }
+                // case 4
                 w->setColor(x->getParent()->getColor());
                 x->getParent()->setColor(node::BLACK);
                 w->getLeft()->setColor(node::BLACK);
@@ -211,57 +280,6 @@ void tree::deleteFixup(node* x) {
     x->setColor(node::BLACK);
 }
 
-// Delete the node with the given key from the tree
-void tree::deleteNode(int key) {
-    // search for the node with the given key
-    node* z = root;
-    while (z != nil && z->getKey() != key) {
-        if (key < z->getKey()) {
-            z = z->getLeft();
-        } else {
-            z = z->getRight();
-        }
-    }
-
-    if (z == nil) {
-        std::cout << "Node not found in the tree.\n";
-        return;
-    }
-
-    // deletion routine
-    node* y = z;
-    node::color yOriginalColor = y->getColor();
-    node* x;
-
-    if (z->getLeft() == nil) {
-        x = z->getRight();
-        transplant(z, z->getRight());
-    } else if (z->getRight() == nil) {
-        x = z->getLeft();
-        transplant(z, z->getLeft());
-    } else {
-        y = treeMinimum(z->getRight());
-        yOriginalColor = y->getColor();
-        x = y->getRight();
-        if (y->getParent() != z) {
-            transplant(y, y->getRight());
-            y->setRight(z->getRight());
-            y->getRight()->setParent(y);
-        } else {
-            x->setParent(y);
-        }
-        transplant(z, y);
-        y->setLeft(z->getLeft());
-        y->getLeft()->setParent(y);
-        y->setColor(z->getColor());
-    }
-
-    if (yOriginalColor == node::BLACK) {
-        deleteFixup(x);
-    }
-
-    delete z;
-}
 
 // Perform an in-order traversal of the tree and print the keys
 void tree::inOrderTraversal(node* n) {
@@ -273,18 +291,20 @@ void tree::inOrderTraversal(node* n) {
 }
 
 // Check if the tree contains a node with the given key
-bool tree::isKeyInside(int key) {
+int tree::isKeyInside(int key) {
     node* n = root;
+    int comparisons = 0;
     while (n != nil) {
+        comparisons++;
         if (n->getKey() == key) {
-            return true;
+            return comparisons;
         } else if (key < n->getKey()) {
             n = n->getLeft();
         } else {
             n = n->getRight();
         }
     }
-    return false;
+    return comparisons;
 }
 
 // Search for a node with the given key, return the node if found, throw an exception otherwise
